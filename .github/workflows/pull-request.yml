@@ -1,5 +1,5 @@
 # Pull Request Workflow
-name: Trigger Framework PR
+name: Pull Request Validation
 
 # Define when the workflow should run
 on:
@@ -96,7 +96,6 @@ jobs:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectBaseDir: force-app/main/default
           args: >
             -Dsonar.apex.coverage.reportPath=tests/apex/codecoverage/test-result-codecoverage.json
             -Dsonar.testExecutionReportPaths=tests/apex/test-result/test-result.xml
