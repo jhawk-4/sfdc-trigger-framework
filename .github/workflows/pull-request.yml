@@ -50,7 +50,7 @@ jobs:
 
       # Run Apex tests in scratch org
       - name: 'Run Apex tests'
-        run: 'sfdx force:apex:test:run -c -r human -d ./tests/apex -w 20'
+        run: 'sfdx force:apex:test:run -c -r junit -d ./tests/apex -w 20'
 
       # Upload code coverage and test run reports
       - name: 'Upload Test Results'
@@ -67,7 +67,7 @@ jobs:
 
       # Validate Code Coverage
       - name: 'Validate Code Coverage in Scratch Org'
-        run: 'sfdx sfpowerscripts:ValidateApexCoverage -u scratch-org -t 90'
+        run: 'sfdx sfpowerscripts:ValidateApexCoverage -u scratch-org -t 85'
 
       # Housekeeping
       - name: 'Delete scratch org'
