@@ -1,0 +1,26 @@
+{
+  "name": "redhat-sfdc-trigger-framework",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Red Hat SFDC Trigger Framework",
+  "scripts": {
+    "lint": "npm run lint:lwc",
+    "lint:lwc": "eslint force-app/main/default/lwc",
+    "test": "npm run test:unit",
+    "test:unit": "sfdx-lwc-jest",
+    "test:unit:watch": "sfdx-lwc-jest --watch",
+    "test:unit:debug": "sfdx-lwc-jest --debug",
+    "test:unit:coverage": "sfdx-lwc-jest --coverage",
+    "prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+    "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+    "org:scratch:create": "sfdx force:org:create --definitionfile config/project-scratch-def.json --setdefaultusername"
+  },
+  "devDependencies": {
+    "@prettier/plugin-xml": "^0.7.2",
+    "@salesforce/eslint-config-lwc": "^0.5.0",
+    "@salesforce/sfdx-lwc-jest": "^0.7.1",
+    "eslint": "^6.8.0",
+    "prettier": "^2.0.5",
+    "prettier-plugin-apex": "^1.4.0"
+  }
+}
