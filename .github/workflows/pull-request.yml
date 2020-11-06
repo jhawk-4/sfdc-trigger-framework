@@ -24,10 +24,10 @@ jobs:
           mkdir sfdx-cli
           tar xJf sfdx-linux-amd64.tar.xz -C sfdx-cli --strip-components 1
           ./sfdx-cli/install
-          SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE=true
-          SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE=true
-          SFDX_IMPROVED_CODE_COVERAGE=true
-          SFDX_DISABLE_AUTOUPDATE=true
+          export SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE=true
+          export SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE=true
+          export SFDX_IMPROVED_CODE_COVERAGE=true
+          export SFDX_DISABLE_AUTOUPDATE=true
 
       # Install any DX plugins needed for the job
       - name: 'Install SFDX Plugins'
