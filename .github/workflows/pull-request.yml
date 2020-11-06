@@ -24,10 +24,6 @@ jobs:
           mkdir sfdx-cli
           tar xJf sfdx-linux-amd64.tar.xz -C sfdx-cli --strip-components 1
           ./sfdx-cli/install
-          export SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_CREATE=true
-          export SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE=true
-          export SFDX_IMPROVED_CODE_COVERAGE=true
-          export SFDX_DISABLE_AUTOUPDATE=true
 
       # Install any DX plugins needed for the job
       - name: 'Install SFDX Plugins'
@@ -59,6 +55,8 @@ jobs:
       # Run Apex tests in scratch org
       - name: 'Run Apex tests'
         run: 'sfdx force:apex:test:run -c -r junit -d ./tests/apex -w 20'
+        env:
+          SFDX_IMPROVED_CODE_COVERAGE: true
 
       # Upload code coverage and test run reports
       - name: 'Upload Test Results'
@@ -85,7 +83,11 @@ jobs:
       - name: 'Create new package version'
         run: |
           sfdx sfpowerscripts:CreateUnlockedPackage -v devhub -n redhat-trigger-framework -k ${{ secrets.PACKAGE_INSTALL_KEY }} --waittime 20
+          cp $HOME/.local/share/sfdx/node_modules/@dxscale/sfpowerscripts/scripts/readVars.sh readVars.sh
+          source readVars.sh
           echo "https://test.salesforce.com/packaging/installPackage.apexp?p0=${sfpowerscripts_package_version_id}" > install.txt
+        env:
+          SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE: true
 
       - name: 'Upload install artifact'
         uses: actions/upload-artifact@v2
