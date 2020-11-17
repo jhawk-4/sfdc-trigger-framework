@@ -1,0 +1,132 @@
+# Pull Request Workflow
+name: CI Package Release
+
+# Define when the workflow should run
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'force-app/**'
+
+# Job Definition
+jobs:
+  # Push the source to a scratch org and run tests
+  scratch-org-test:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code in the pull request
+      - name: 'Checkout source code'
+        uses: actions/checkout@v2
+
+      # Install SFDX CLI
+      - name: 'Install Salesforce CLI'
+        run: |
+          wget https://developer.salesforce.com/media/salesforce-cli/sfdx-linux-amd64.tar.xz
+          mkdir sfdx-cli
+          tar xJf sfdx-linux-amd64.tar.xz -C sfdx-cli --strip-components 1
+          ./sfdx-cli/install
+
+      # Install any DX plugins needed for the job
+      - name: 'Install SFDX Plugins'
+        run: |
+          echo 'y' | sfdx plugins:install sfpowerkit
+          echo 'y' | sfdx plugins:install @dxatscale/sfpowerscripts
+
+      # Populate JWT Key file for dev hub
+      - name: 'Populate server.key file with DEVHUB_JWT_KEY secret'
+        shell: bash
+        run: 'echo "${{ secrets.DEVHUB_JWT_KEY}}" > server.key'
+
+      # Authenticate dev hub
+      - name: 'Authenticate Dev Hub'
+        run: 'sfdx force:auth:jwt:grant -u ${{ secrets.DEVHUB_USERNAME }} -f ./server.key -i ${{ secrets.DEVHUB_CONSUMER_KEY }} -r ${{ secrets.DEVHUB_INSTANCE_URL }} -a devhub -d'
+
+      # Create scratch org
+      - name: 'Create scratch org'
+        run: 'sfdx force:org:create -f config/project-scratch-def.json -a scratch-org -s -d 1'
+
+      # Install any dependent packages if they exist in the sfdx-project.json
+      - name: 'Install package dependencies'
+        run: 'sfdx sfpowerkit:package:dependencies:install -u scratch-org -r -w 20'
+
+      # Deploy source to scratch org
+      - name: 'Push source to scratch org'
+        run: 'sfdx force:source:push'
+
+      # Run Apex tests in scratch org
+      - name: 'Run Apex tests'
+        run: 'sfdx force:apex:test:run -c -r junit -d ./tests/apex -w 20'
+        env:
+          SFDX_IMPROVED_CODE_COVERAGE: true
+
+      # Upload code coverage and test run reports
+      - name: 'Upload Test Results'
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-result
+          path: tests/apex/test-result.xml
+
+      - name: 'Upload Code Coverage Report'
+        uses: actions/upload-artifact@v2
+        with:
+          name: codecoverage
+          path: tests/apex/test-result-codecoverage.json
+
+      # Packaging Steps
+      # 1. Increment the patch number for the package and commit changes
+      # 2. Create new beta version 
+      # 3. Promote the new version
+      # 4. Upload artifact for the install link that can be use to install the beta package
+      # 5. Push version update commit to repo
+      - name: 'Create and promote a new package version'
+        run: |
+          branch=${GITHUB_REF#refs/*/}
+          sfdx sfpowerscripts:IncrementBuildNumber --segment Patch -c
+          sfdx sfpowerscripts:CreateUnlockedPackage -v devhub -n redhat-trigger-framework --versionnumber sfpowerscripts_incremented_project_version -k ${{ secrets.PACKAGE_INSTALL_KEY }} --enablecoverage --waittime 30
+          cp $HOME/.local/share/sfdx/node_modules/@dxatscale/sfpowerscripts/scripts/readVars.sh readVars.sh
+          source readVars.sh
+          sfdx force:package:version:promote -v devhub -p ${sfpowerscripts_package_version_id} --noprompt
+          echo "https://login.salesforce.com/packaging/installPackage.apexp?p0=${sfpowerscripts_package_version_id}" > install.txt
+        env:
+          SFDX_PROJECT_AUTOUPDATE_DISABLE_FOR_PACKAGE_VERSION_CREATE: true
+
+      - name: 'Upload install artifact'
+        uses: actions/upload-artifact@v2
+        with:
+          name: install
+          path: install.txt
+      
+      - name: 'Push version increment'
+        run: git push
+
+      # Housekeeping
+      - name: 'Delete scratch org'
+        if: always()
+        run: 'sfdx force:org:delete -p -u scratch-org'
+
+  # Run Sonarscan
+  static-code-scan:
+    runs-on: ubuntu-latest
+    needs: scratch-org-test
+    steps:
+      # Checkout the code in the pull request
+      - name: 'Checkout source code'
+        uses: actions/checkout@v2
+
+      # Download test run artifacts
+      - name: 'Get Test and Code Coverage Reports'
+        uses: actions/download-artifact@v2
+        with:
+          path: tests/apex
+
+      # Run Sonarscan and report the results to the PR
+      - name: 'SonarCloud Analysis'
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >
+            -Dsonar.apex.coverage.reportPath=tests/apex/codecoverage/test-result-codecoverage.json
+            -Dsonar.junit.reportPaths=test/apex/test-result/test-result.xml

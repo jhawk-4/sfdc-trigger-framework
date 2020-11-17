@@ -9,6 +9,12 @@ public with sharing class CustomMDTTriggerHandler extends TriggerHandler {
    * the metadata designated trigger logic.
   */
 
+  @TestVisible
+  private String firedOnsObjectType;
+
+  @TestVisible
+  private Map<String, List<TriggerExecutionHandler__mdt>> customMetadataResultsMap = new Map<String, List<TriggerExecutionHandler__mdt>>();
+
   public override void run() {
     /*
      * Our first task is to identify the object on which this trigger fired.
@@ -16,24 +22,23 @@ public with sharing class CustomMDTTriggerHandler extends TriggerHandler {
      * which makes this detection easier. see the helper method below
      */
 
-    String firedOnsObjectType = getSObjectType();
+    this.firedOnsObjectType = (this.firedOnsObjectType == null ? getSObjectType() : this.firedOnsObjectType);
 
     /*
      * This query executes against our custom metadata to return records that detail
      * what trigger handlers, and in what order, they should be called.
      */
-    List<TriggersOfAwesome__mdt> triggerHandlersToRun = [
-      SELECT Execution_Order__c, Class_Name__c
-      FROM TriggersOfAwesome__mdt
-      WHERE sObjectType__c = :firedOnsObjectType
-      ORDER BY Execution_Order__c
-    ];
+    String query = 'SELECT Execution_Order__c, Class_Name__c '
+                    + 'FROM TriggerExecutionHandler__mdt '
+                    + 'WHERE sObjectType__c = \'' + this.firedOnsObjectType + '\' '
+                    + 'ORDER BY Execution_Order__c';
+    List<TriggerExecutionHandler__mdt> triggerHandlersToRun = getMetadataRecords(query);
 
     /*
      * this loops over each of the trigger handlers identified in the query above, executing them.
      * Please tweet @simongoodyear to ask him about Tryggers
      */
-    for (TriggersOfAwesome__mdt trygger: triggerHandlersToRun) {
+    for (TriggerExecutionHandler__mdt trygger: triggerHandlersToRun) {
       /*
        * This next line of code is crucial to transforming the string we get from
        * the custom metadata and transforming that into an actual object we can
@@ -95,5 +100,17 @@ public with sharing class CustomMDTTriggerHandler extends TriggerHandler {
     } else {
       return Trigger.old[0].getSObjectType().getDescribe().getName();
     }
+  }
+
+  /*
+   * Function to hanlde the query result for custom metadata records.  
+   * By using the test visible map, we can test this class without having
+   * to have actual custom metadata records within the destination org
+   */
+  private List<TriggerExecutionHandler__mdt> getMetadataRecords(String query) {
+    if(!this.customMetadataResultsMap.containsKey(query)) {
+      this.customMetadataResultsMap.put(query, Database.query(query));
+    }
+    return this.customMetadataResultsMap.get(query);
   }
 }

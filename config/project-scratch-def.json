@@ -1,10 +1,10 @@
 {
-  "orgName": "kpoorman Company",
-  "edition": "Developer",
+  "orgName": "Red Hat",
+  "edition": "Enterprise",
   "features": [],
   "settings": {
-    "orgPreferenceSettings": {
-      "s1DesktopEnabled": true
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
     }
   }
 }
