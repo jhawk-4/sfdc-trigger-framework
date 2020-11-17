@@ -84,7 +84,7 @@ jobs:
       # 2. Upload artifact for the install link that can be use to install the beta package
       - name: 'Create new package version'
         run: |
-          sfdx sfpowerscripts:CreateUnlockedPackage -v devhub -n redhat-trigger-framework -k ${{ secrets.PACKAGE_INSTALL_KEY }} --branch ${{ github.head_ref }} --waittime 20
+          sfdx sfpowerscripts:CreateUnlockedPackage -v devhub -n redhat-trigger-framework -k ${{ secrets.PACKAGE_INSTALL_KEY }} --waittime 20
           cp $HOME/.local/share/sfdx/node_modules/@dxatscale/sfpowerscripts/scripts/readVars.sh readVars.sh
           source readVars.sh
           echo "https://test.salesforce.com/packaging/installPackage.apexp?p0=${sfpowerscripts_package_version_id}" > install.txt
