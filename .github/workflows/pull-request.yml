@@ -34,13 +34,13 @@ jobs:
           echo 'y' | sfdx plugins:install @dxatscale/sfpowerscripts
 
       # Populate JWT Key file for dev hub
-      - name: 'Populate server.key file with DEVHUB_JWT_KEY secret'
+      - name: 'Populate keyFile.txt file with DEVHUB_JWT_KEY secret'
         shell: bash
-        run: 'echo ${{ secrets.DEVHUB_JWT_KEY}} > ./server.key'
+        run: 'echo ${{ secrets.DEVHUB_JWT_KEY}} > ./keyFile.txt'
 
       # Authenticate dev hub
       - name: 'Authenticate Dev Hub'
-        run: 'sfdx force:auth:jwt:grant -u ${{ secrets.DEVHUB_USERNAME }} -f ./server.key -i ${{ secrets.DEVHUB_CONSUMER_KEY }} -r ${{ secrets.DEVHUB_INSTANCE_URL }} -a devhub -d'
+        run: 'sfdx force:auth:jwt:grant -u ${{ secrets.DEVHUB_USERNAME }} -f ./keyFile.txt -i ${{ secrets.DEVHUB_CONSUMER_KEY }} -r ${{ secrets.DEVHUB_INSTANCE_URL }} -a devhub -d'
 
       # Create scratch org
       - name: 'Create scratch org'
