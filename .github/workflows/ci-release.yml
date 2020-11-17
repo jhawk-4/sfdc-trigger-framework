@@ -81,8 +81,9 @@ jobs:
       # 5. Push version update commit to repo
       - name: 'Create and promote a new package version'
         run: |
+          branch=${GITHUB_REF#refs/*/}
           sfdx sfpowerscripts:IncrementBuildNumber --segment Patch -c
-          sfdx sfpowerscripts:CreateUnlockedPackage -v devhub -n redhat-trigger-framework --versionnumber sfpowerscripts_incremented_project_version -k ${{ secrets.PACKAGE_INSTALL_KEY }} --enablecoverage --waittime 30
+          sfdx sfpowerscripts:CreateUnlockedPackage -v devhub -n redhat-trigger-framework --versionnumber sfpowerscripts_incremented_project_version -k ${{ secrets.PACKAGE_INSTALL_KEY }} --branch ${branch} --enablecoverage --waittime 30
           cp $HOME/.local/share/sfdx/node_modules/@dxatscale/sfpowerscripts/scripts/readVars.sh readVars.sh
           source readVars.sh
           sfdx force:package:version:promote -v devhub -p ${sfpowerscripts_package_version_id} --noprompt
